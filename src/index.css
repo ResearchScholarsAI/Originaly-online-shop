@@ -1,94 +1,51 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Persian Heritage Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 10 11 30; /* heritage-deep-blue */
+    --foreground: 200 230 200; /* heritage-mint */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 26 27 58; /* heritage-night-blue */
+    --card-foreground: 184 212 184; /* heritage-pistachio */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 26 27 58;
+    --popover-foreground: 184 212 184;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 184 212 184; /* heritage-pistachio */
+    --primary-foreground: 10 11 30;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 45 53 97; /* heritage-royal-blue */
+    --secondary-foreground: 200 230 200;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 45 53 97;
+    --muted-foreground: 155 196 155;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 255 215 0; /* heritage-gold */
+    --accent-foreground: 10 11 30;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 220 38 38;
+    --destructive-foreground: 248 250 252;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 45 53 97;
+    --input: 45 53 97;
+    --ring: 184 212 184;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 26 27 58;
+    --sidebar-foreground: 184 212 184;
+    --sidebar-primary: 184 212 184;
+    --sidebar-primary-foreground: 10 11 30;
+    --sidebar-accent: 45 53 97;
+    --sidebar-accent-foreground: 200 230 200;
+    --sidebar-border: 45 53 97;
+    --sidebar-ring: 184 212 184;
   }
 }
 
@@ -98,6 +55,88 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-heritage-deep-blue text-heritage-mint font-vazir;
+    background: linear-gradient(135deg, #0A0B1E 0%, #1A1B3A 50%, #2D3561 100%);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-vazir;
+    font-weight: 600;
+  }
+
+  .persian-text {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .english-text {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .heritage-card {
+    @apply bg-heritage-night-blue/80 backdrop-blur-sm border border-heritage-royal-blue/50 rounded-lg p-6 transition-all duration-300;
+    box-shadow: 0 4px 20px rgba(10, 11, 30, 0.5);
+  }
+
+  .heritage-card:hover {
+    @apply transform scale-105 border-heritage-pistachio/50;
+    box-shadow: 0 8px 30px rgba(184, 212, 184, 0.2);
+  }
+
+  .heritage-button {
+    @apply bg-heritage-pistachio text-heritage-deep-blue px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    box-shadow: 0 4px 15px rgba(184, 212, 184, 0.3);
+  }
+
+  .heritage-button:hover {
+    @apply bg-heritage-sage transform scale-105;
+    box-shadow: 0 6px 20px rgba(184, 212, 184, 0.4);
+  }
+
+  .floating-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(184, 212, 184, 0.6);
+    border-radius: 50%;
+    animation: particle 8s linear infinite;
+  }
+
+  .shimmer-text {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 20px rgba(184, 212, 184, 0.5);
+  }
+  
+  .backdrop-heritage {
+    backdrop-filter: blur(10px) saturate(180%);
   }
 }
