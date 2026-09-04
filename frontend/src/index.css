@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ------------------------------------------------------------------
+       v2 theme (§5 of the master prompt): vivid gradient-mesh dark theme.
+       Deep near-black base kept for trust/premium feel; the flat gold
+       accent is replaced by a violet -> cyan -> magenta gradient system,
+       used on CTAs, active states and highlights (not the whole page).
+       Existing utility class NAMES (gold-text, btn-gold, ring-gold) are
+       kept so every page that already uses them gets the new look
+       automatically — see @layer components below.
+    ------------------------------------------------------------------- */
+    --background: 250 28% 4%;
+    --foreground: 240 20% 96%;
+
+    --card: 250 22% 7%;
+    --card-foreground: 240 20% 96%;
+
+    --popover: 250 24% 6%;
+    --popover-foreground: 240 20% 96%;
+
+    --primary: 262 83% 66%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 250 16% 14%;
+    --secondary-foreground: 240 15% 90%;
+
+    --muted: 250 14% 13%;
+    --muted-foreground: 240 10% 62%;
+
+    --accent: 189 94% 55%;
+    --accent-foreground: 250 28% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 250 16% 18%;
+    --input: 250 16% 18%;
+    --ring: 262 83% 66%;
+
+    --radius: 1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
+    background-image:
+      radial-gradient(1100px 620px at 88% -8%, hsl(262 83% 66% / 0.16), transparent 62%),
+      radial-gradient(900px 520px at 6% 108%, hsl(189 94% 55% / 0.12), transparent 60%),
+      radial-gradient(700px 500px at 50% 40%, hsl(300 80% 60% / 0.05), transparent 65%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: hsl(262 83% 66% / 0.35);
+    color: hsl(240 20% 98%);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(240 10% 6%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, hsl(262 70% 55%), hsl(189 70% 40%));
+    border-radius: 8px;
+    border: 2px solid hsl(250 24% 6%);
+  }
+}
+
+@layer components {
+  .glass {
+    background: hsl(250 22% 9% / 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid hsl(262 83% 66% / 0.16);
+  }
+
+  .glass-strong {
+    background: hsl(250 24% 7% / 0.82);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid hsl(262 83% 66% / 0.24);
+  }
+
+  /* Legacy class name kept — now renders the new violet -> cyan -> magenta
+     gradient instead of flat gold, so every page already using `gold-text`
+     picks up the new theme with no edits needed. */
+  .gold-text {
+    background: linear-gradient(115deg, #a78bfa 0%, #8b5cf6 30%, #22d3ee 65%, #e879f9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gold-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(262 83% 66% / 0.7), hsl(189 94% 55% / 0.5), transparent);
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 45%, #22d3ee 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 8px 30px -8px hsl(262 83% 66% / 0.55), inset 0 1px 0 hsl(270 90% 85% / 0.35);
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s;
+  }
+  .btn-gold:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 14px 40px -8px hsl(262 83% 66% / 0.7), inset 0 1px 0 hsl(270 90% 88% / 0.45);
+  }
+
+  .card-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.55s, border-color 0.55s;
+  }
+  .card-3d:hover {
+    transform: translateY(-10px) rotateX(5deg) rotateY(-4deg);
+    box-shadow: 0 30px 60px -20px hsl(42 70% 50% / 0.28), 0 10px 30px -10px rgb(0 0 0 / 0.7);
+    border-color: hsl(42 70% 55% / 0.45);
+  }
+
+  .img-3d {
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card-3d:hover .img-3d {
+    transform: translateZ(40px) scale(1.06);
+  }
+
+  .hero-glow {
+    position: relative;
+  }
+  .hero-glow::before {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(600px 300px at 50% 20%, hsl(42 70% 55% / 0.16), transparent 70%);
+    pointer-events: none;
+    animation: pulseGlow 6s ease-in-out infinite;
+  }
+
+  .pattern-grid {
+    background-image:
+      linear-gradient(hsl(262 83% 66% / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(189 94% 55% / 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+  }
+
+  .float-slow {
+    animation: floatY 7s ease-in-out infinite;
+  }
+  .float-slower {
+    animation: floatY 11s ease-in-out infinite reverse;
+  }
+
+  .shimmer {
+    background: linear-gradient(110deg, transparent 30%, hsl(42 80% 75% / 0.25) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmerMove 2.6s linear infinite;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(34px);
+    transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ring-gold {
+    box-shadow: 0 0 0 1px hsl(262 83% 66% / 0.35), 0 0 40px -10px hsl(189 94% 55% / 0.4);
+  }
+
+  /* New: consistent active-state treatment (§2.3) — one shared class used
+     by nav links, filter chips, and size selectors instead of ad-hoc
+     per-page styling. */
+  .active-chip {
+    background: linear-gradient(135deg, hsl(262 83% 66%), hsl(189 94% 55%));
+    color: #fff;
+    transform: scale(1.03);
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s;
+  }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes shimmerMove {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+.spin-slow {
+  animation: spinSlow 26s linear infinite;
+}
