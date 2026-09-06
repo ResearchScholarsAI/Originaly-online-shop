@@ -4,7 +4,7 @@ import { ShoppingCart, Menu, X, Phone, MapPin, Instagram, Send, ShieldCheck, Tru
 import { AnimatePresence } from 'framer-motion';
 import { BRAND, loadCart, onCartChange, cartCount } from '@/lib/store';
 import CategoryMegaMenu from '@/components/CategoryMegaMenu';
-import type { Department } from '@/lib/categories';
+import type { Gender } from '@/lib/categories';
 
 export const LOGO_URL =
   'https://mgx-backend-cdn.metadl.com/generate/images/1573859/2026-09-01/vukmjmycakpa/logo-originaly-wordmark.png';
@@ -14,30 +14,25 @@ const NAV = [
   { to: '/shop', label: 'همه محصولات' },
   { to: '/admin', label: 'پنل مدیریت' },
 ];
-const DEPARTMENTS: { id: Department; label: string }[] = [
-  { id: 'clothing', label: 'پوشاک' },
-  { id: 'footwear', label: 'کفش' },
-];
+const GENDERS: { id: Gender; label: string }[] = [{ id: 'men', label: 'مردانه' }, { id: 'women', label: 'زنانه' }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState(loadCart());
   const [open, setOpen] = useState(false);
-  const [openDept, setOpenDept] = useState<Department | null>(null);
+  const [openGender, setOpenGender] = useState<Gender | null>(null);
   const closeTimer = useRef<number | null>(null);
   const location = useLocation();
 
   useEffect(() => onCartChange(() => setCart(loadCart())), []);
   useEffect(() => {
     setOpen(false);
-    setOpenDept(null);
+    setOpenGender(null);
     window.scrollTo({ top: 0 });
   }, [location.pathname, location.search]);
 
   const count = cartCount(cart);
 
-  function scheduleClose() {
-    closeTimer.current = window.setTimeout(() => setOpenDept(null), 150);
-  }
+  function scheduleClose() { closeTimer.current = window.setTimeout(() => setOpenGender(null), 180); }
   function cancelClose() {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   }
@@ -61,17 +56,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               خانه
             </Link>
 
-            {DEPARTMENTS.map((d) => (
-              <div key={d.id} className="relative" onMouseEnter={() => { cancelClose(); setOpenDept(d.id); }} onMouseLeave={scheduleClose}>
+            {GENDERS.map((d) => (
+              <div key={d.id} className="relative" onMouseEnter={() => { cancelClose(); setOpenGender(d.id); }} onMouseLeave={scheduleClose}>
                 <button
-                  className={`px-4 py-2 rounded-full text-sm transition-colors ${openDept === d.id ? 'active-chip' : 'text-foreground/80 hover:text-primary hover:bg-primary/10'}`}
+                  className={`px-4 py-2 rounded-full text-sm transition-colors ${openGender === d.id ? 'active-chip' : 'text-foreground/80 hover:text-primary hover:bg-primary/10'}`}
                 >
                   {d.label}
                 </button>
                 <AnimatePresence>
-                  {openDept === d.id && (
+                  {openGender === d.id && (
                     <div className="absolute top-full pt-3 start-0 z-50" onMouseEnter={cancelClose} onMouseLeave={scheduleClose}>
-                      <CategoryMegaMenu department={d.id} />
+                      <CategoryMegaMenu gender={d.id} />
                     </div>
                   )}
                 </AnimatePresence>
@@ -104,20 +99,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {open && (
           <nav className="md:hidden border-t border-border/60 px-4 py-3 flex flex-col gap-1">
             <Link to="/" className="px-4 py-2.5 rounded-xl hover:bg-primary/10 text-sm">خانه</Link>
-            {DEPARTMENTS.map((d) => (
+            {GENDERS.map((d) => (
               <div key={d.id} className="px-4 py-1">
-                <p className="text-xs text-primary font-bold mb-1.5">{d.label}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {['men', 'women'].map((g) => (
-                    <Link
-                      key={g}
-                      to={`/shop?department=${d.id}&gender=${g}`}
-                      className="text-xs glass rounded-full px-3 py-1.5"
-                    >
-                      {g === 'men' ? 'مردانه' : 'زنانه'}
-                    </Link>
-                  ))}
-                </div>
+                <p className="text-xs text-primary font-bold mb-1.5">{d.label}</p><Link to={`/shop?gender=${d.id}`} className="text-xs glass rounded-full px-3 py-1.5 inline-block">مشاهده محصولات</Link>
               </div>
             ))}
             <Link to="/shop" className="px-4 py-2.5 rounded-xl hover:bg-primary/10 text-sm">همه محصولات</Link>

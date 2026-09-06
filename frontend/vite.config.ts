@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import fs from 'node:fs';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { viteSourceLocator } from '@metagptx/vite-plugin-source-locator';
 import { atoms } from '@metagptx/web-sdk/plugins';
 import { vitePrerenderPlugin } from 'vite-prerender-plugin';
 import Sitemap from 'vite-plugin-sitemap';
 import { getBlogRoutes } from './prerender/blog-routes.js';
 import { getSitemapLastmod } from './prerender/blog-sitemap.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function escapeHtmlAttr(str: string): string {
   return str
@@ -43,6 +47,7 @@ export default defineConfig(({ command }) => {
   const blogPrerenderRoutes = command === 'build' ? getBlogRoutes() : [];
 
   return {
+    base: './',
     plugins: [
       viteSourceLocator({
         prefix: 'mgx', // Prefix used to identify source locations; do not change.
@@ -51,7 +56,7 @@ export default defineConfig(({ command }) => {
       atoms(),
       ensureBuildOutDir(),
       Sitemap({
-        hostname: 'https://atoms.template.com',
+        hostname: process.env.VITE_SITE_URL ?? 'https://originaly.ir',
         lastmod: getSitemapLastmod(),
         readable: true,
         generateRobotsTxt: true,
@@ -79,6 +84,11 @@ export default defineConfig(({ command }) => {
         },
       },
       watch: { usePolling: true, interval: 600 },
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: parseInt(process.env.VITE_PREVIEW_PORT || '4174'),
+      allowedHosts: true,
     },
     build: {
       rollupOptions: {

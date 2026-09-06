@@ -5,7 +5,7 @@ export const SUPABASE_URL = 'https://nowsaklaqtitpyarwmcq.supabase.co';
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vd3Nha2xhcXRpdHB5YXJ3bWNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMDEzMDksImV4cCI6MjEwMzg3NzMwOX0.gKoHLU9yUQ6DDubXWl1C7JYOHEVwe-3Gha670oT0x64';
 
-export const ADMIN_EMAIL = 'admin@originally.ir';
+export const ADMIN_EMAIL = 'admin@originaly.ir';
 
 const PRODUCTS_TABLE = 'app_a3f9f1497d_products';
 const ORDERS_TABLE = 'app_a3f9f1497d_orders';
@@ -86,7 +86,7 @@ export interface Address {
 export const BRAND = {
   name: 'Originaly',
   fa: 'اورجینالی',
-  domain: 'originally.ir',
+  domain: 'originaly.ir',
   owner: 'پژوهان‌مهر',
   phone: '+989122640979',
   phoneDisplay: '۰۹۱۲۲۶۴۰۹۷۹',
@@ -219,55 +219,13 @@ export function generateOrderNumber(): string {
 }
 
 export async function submitOrder(payload: OrderPayload): Promise<string> {
-  const orderNumber = generateOrderNumber();
-  const { error } = await supabase.from(ORDERS_TABLE).insert({
-    order_number: orderNumber,
-    customer_name: payload.customer_name,
-    phone: payload.phone,
-    address: payload.address,
-    city: payload.city,
-    postal_code: payload.postal_code,
-    notes: payload.notes,
-    items: payload.items,
-    total: payload.total,
-    shipping: payload.shipping,
-    payment_method: payload.payment_method,
-    payment_status: 'unpaid',
-    status: 'pending',
+  const { data, error } = await supabase.functions.invoke('submit-order', {
+    body: payload,
   });
   if (error) throw error;
-
-  // Best-effort: save this address under the customer's verified phone
-  // number and bump their order stats, so the Admin "مشتریان" panel (§3.3)
-  // stays complete. This must never block order submission if it fails.
-  try {
-    const { data: customer } = await supabase
-      .from(CUSTOMERS_TABLE)
-      .select('id, total_orders, total_spent, name')
-      .eq('phone', payload.phone)
-      .maybeSingle();
-    if (customer) {
-      await supabase
-        .from(CUSTOMERS_TABLE)
-        .update({
-          name: customer.name || payload.customer_name,
-          total_orders: (customer.total_orders || 0) + 1,
-          total_spent: Number(customer.total_spent || 0) + payload.total + payload.shipping,
-        })
-        .eq('id', customer.id);
-      await supabase.from(ADDRESSES_TABLE).insert({
-        customer_id: customer.id,
-        address: payload.address,
-        city: payload.city,
-        postal_code: payload.postal_code,
-        is_default: true,
-      });
-    }
-  } catch (statsErr) {
-    console.warn('Customer stats update skipped:', statsErr);
-  }
-
-  return orderNumber;
+  const result = data as { orderNumber?: string; error?: string } | null;
+  if (!result?.orderNumber) throw new Error(result?.error || 'ثبت سفارش انجام نشد.');
+  return result.orderNumber;
 }
 
 export async function fetchOrders(): Promise<Record<string, unknown>[]> {
@@ -324,8 +282,10 @@ export function normalizeIranPhone(raw: string): string | null {
 }
 
 export async function requestOtp(phone: string): Promise<void> {
-  const { error } = await supabase.functions.invoke('send-otp', { body: { phone } });
+  const { data, error } = await supabase.functions.invoke('send-otp', { body: { phone } });
   if (error) throw error;
+  const result = (data as { ok?: boolean; error?: string } | null);
+  if (!result?.ok) throw new Error(result?.error || 'ارسال کد تایید انجام نشد.');
 }
 
 export async function verifyOtp(phone: string, code: string): Promise<boolean> {
@@ -406,20 +366,20 @@ export interface PaymentRequestResult {
   error?: string;
 }
 
-export async function createZarinpalPaymentRequest(orderNumber: string, amountToman: number): Promise<PaymentRequestResult> {
+export async function createZarinpalPaymentRequest(orderNumber: string): Promise<PaymentRequestResult> {
   if (!isZarinpalConfigured()) {
     return { ok: false, error: 'ZarinPal merchant ID is not configured yet.' };
   }
   const { data, error } = await supabase.functions.invoke('zarinpal-request', {
-    body: { orderNumber, amount: amountToman },
+    body: { orderNumber },
   });
   if (error) return { ok: false, error: error.message };
   return data as PaymentRequestResult;
 }
 
-export async function verifyZarinpalPayment(authority: string, status: string): Promise<{ ok: boolean; refId?: string }> {
+export async function verifyZarinpalPayment(authority: string, status: string, orderNumber: string): Promise<{ ok: boolean; refId?: string }> {
   const { data, error } = await supabase.functions.invoke('zarinpal-verify', {
-    body: { authority, status },
+    body: { authority, status, orderNumber },
   });
   if (error) throw error;
   return data as { ok: boolean; refId?: string };

@@ -1,9 +1,13 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.originally.store',
-  appName: 'Originally',
-  webDir: 'dist'
+  appId: 'ir.originaly.store',
+  appName: 'Originaly',
+  webDir: 'dist',
+  bundledWebRuntime: false,
+  server: {
+    androidScheme: 'https',
+  },
 };
 
 export default config;

@@ -4,16 +4,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "cp dist/index.html dist/404.html",
     "lint": "eslint --quiet ./src",
     "preview": "vite preview",
-    "postinstall": "echo 'Dependencies installed successfully'"
+    "postinstall": "echo 'Dependencies installed successfully'",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build": "npx cap build android"
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.1",
-    "@capacitor/core": "^8.5.1",
     "@hookform/resolvers": "^3.9.0",
-    "@metagptx/vite-plugin-source-locator": "latest",
-    "@metagptx/web-sdk": "latest",
+    "@metagptx/vite-plugin-source-locator": "0.0.19",
+    "@metagptx/web-sdk": "0.0.77",
     "@playwright/mcp": "^0.0.36",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -67,10 +69,11 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "yaml": "^2.8.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.1",
     "@eslint/js": "^9.9.0",
     "@playwright/test": "^1.55.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
@@ -94,6 +97,12 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
     "vite-plugin-sitemap": "^0.8.2",
-    "vite-prerender-plugin": "^0.5.13"
-  }
+    "vite-prerender-plugin": "^0.5.13",
+    "@capacitor/cli": "^7.4.3"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.19 <23"
+  },
+  "private": true
 }

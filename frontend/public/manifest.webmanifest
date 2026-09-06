@@ -1,0 +1,15 @@
+{
+  "name": "Originaly | اورجینالی",
+  "short_name": "Originaly",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#09070f",
+  "theme_color": "#8b5cf6",
+  "description": "فروشگاه آنلاین کتونی و پوشاک اورجینال Originaly",
+  "categories": ["shopping", "fashion"],
+  "prefer_related_applications": false
+}

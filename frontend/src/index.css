@@ -132,8 +132,8 @@
   }
   .card-3d:hover {
     transform: translateY(-10px) rotateX(5deg) rotateY(-4deg);
-    box-shadow: 0 30px 60px -20px hsl(42 70% 50% / 0.28), 0 10px 30px -10px rgb(0 0 0 / 0.7);
-    border-color: hsl(42 70% 55% / 0.45);
+    box-shadow: 0 30px 60px -20px hsl(262 83% 66% / 0.28), 0 10px 30px -10px rgb(0 0 0 / 0.7);
+    border-color: hsl(262 83% 66% / 0.45);
   }
 
   .img-3d {
@@ -151,7 +151,7 @@
     content: '';
     position: absolute;
     inset: -20%;
-    background: radial-gradient(600px 300px at 50% 20%, hsl(42 70% 55% / 0.16), transparent 70%);
+    background: radial-gradient(600px 300px at 50% 20%, hsl(262 83% 66% / 0.16), transparent 70%);
     pointer-events: none;
     animation: pulseGlow 6s ease-in-out infinite;
   }
@@ -172,7 +172,7 @@
   }
 
   .shimmer {
-    background: linear-gradient(110deg, transparent 30%, hsl(42 80% 75% / 0.25) 50%, transparent 70%);
+    background: linear-gradient(110deg, transparent 30%, hsl(189 94% 75% / 0.22) 50%, transparent 70%);
     background-size: 200% 100%;
     animation: shimmerMove 2.6s linear infinite;
   }
@@ -194,6 +194,38 @@
   /* New: consistent active-state treatment (§2.3) — one shared class used
      by nav links, filter chips, and size selectors instead of ad-hoc
      per-page styling. */
+
+  /* Originaly Master Visual System — Phase 3 */
+  .ambient-noise {
+    position: relative;
+    isolation: isolate;
+  }
+  .ambient-noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: .16;
+    background-image: radial-gradient(circle at 20% 30%, hsl(262 83% 80% / .18) 0 1px, transparent 1px), radial-gradient(circle at 80% 70%, hsl(189 94% 75% / .14) 0 1px, transparent 1px);
+    background-size: 28px 28px, 36px 36px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+  .magnetic-hover {
+    transition: transform .45s cubic-bezier(.2,.8,.2,1), filter .45s ease;
+  }
+  .magnetic-hover:hover { transform: translateY(-4px); filter: brightness(1.08); }
+  .category-orbit {
+    position: relative;
+    overflow: hidden;
+  }
+  .category-orbit::before, .category-orbit::after {
+    content: ''; position: absolute; border: 1px solid hsl(262 83% 66% / .18); border-radius: 999px; pointer-events: none;
+  }
+  .category-orbit::before { width: 170%; aspect-ratio: 1; left: -35%; top: -65%; transform: rotate(18deg); }
+  .category-orbit::after { width: 110%; aspect-ratio: 1; right: -45%; bottom: -70%; border-color: hsl(189 94% 55% / .16); transform: rotate(-24deg); }
+  .soft-glow { box-shadow: 0 0 70px -30px hsl(262 83% 66% / .55); }
+
   .active-chip {
     background: linear-gradient(135deg, hsl(262 83% 66%), hsl(189 94% 55%));
     color: #fff;
@@ -222,4 +254,13 @@
 }
 .spin-slow {
   animation: spinSlow 26s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

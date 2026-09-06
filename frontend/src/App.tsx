@@ -12,6 +12,8 @@ import Cart from './pages/Cart';
 import Admin from './pages/Admin';
 import AuthCallback from './pages/AuthCallback';
 import AuthError from './pages/AuthError';
+import PaymentCallback from './pages/PaymentCallback';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -72,12 +74,13 @@ const AppRoutes = () => {
         />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/error" element={<AuthError />} />
+        <Route path="/payment/callback" element={<PaymentCallback />} />
         <Route
           path="*"
           element={
             <Layout>
               <PageTransition>
-                <Home />
+                <NotFound />
               </PageTransition>
             </Layout>
           }

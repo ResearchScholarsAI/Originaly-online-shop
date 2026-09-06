@@ -22,6 +22,8 @@ import {
   type Customer,
 } from '@/lib/store';
 import { toast } from 'sonner';
+import { BarChart3, ShoppingBag, Users, WalletCards, PackageSearch } from 'lucide-react';
+import { CATEGORY_TREE, categoryPathLabel, type Department, type Gender } from '@/lib/categories';
 
 export default function Admin() {
   const [authed, setAuthed] = useState(false);
@@ -89,15 +91,68 @@ export default function Admin() {
 }
 
 function AdminDashboard() {
-  const [tab, setTab] = useState<'products' | 'orders' | 'customers'>('products');
+  const [tab, setTab] = useState<'overview' | 'products' | 'orders' | 'customers'>('overview');
   return (
     <div className="space-y-6">
       <div className="glass rounded-full p-1.5 w-fit flex gap-1">
+        <button onClick={() => setTab('overview')} className={`rounded-full px-6 py-2 text-sm transition-all ${tab === 'overview' ? 'active-chip' : 'hover:text-primary'}`}>نمای کلی</button>
         <button onClick={() => setTab('products')} className={`rounded-full px-6 py-2 text-sm transition-all ${tab === 'products' ? 'active-chip' : 'hover:text-primary'}`}>محصولات</button>
         <button onClick={() => setTab('orders')} className={`rounded-full px-6 py-2 text-sm transition-all ${tab === 'orders' ? 'active-chip' : 'hover:text-primary'}`}>سفارش‌ها</button>
         <button onClick={() => setTab('customers')} className={`rounded-full px-6 py-2 text-sm transition-all ${tab === 'customers' ? 'active-chip' : 'hover:text-primary'}`}>مشتریان</button>
       </div>
-      {tab === 'products' ? <ProductsPanel /> : tab === 'orders' ? <OrdersPanel /> : <CustomersPanel />}
+      {tab === 'overview' ? <AdminOverview /> : tab === 'products' ? <ProductsPanel /> : tab === 'orders' ? <OrdersPanel /> : <CustomersPanel />}
+    </div>
+  );
+}
+
+
+function AdminOverview() {
+  const [data, setData] = useState({ products: 0, activeProducts: 0, orders: 0, pending: 0, customers: 0, revenue: 0, lowStock: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchOrders(), fetchCustomers()])
+      .then(([products, orders, customers]) => {
+        const rows = orders as Record<string, unknown>[];
+        setData({
+          products: products.length,
+          activeProducts: products.filter((p) => p.is_active).length,
+          orders: rows.length,
+          pending: rows.filter((o) => ['pending', 'confirmed'].includes(String(o.status))).length,
+          customers: customers.length,
+          revenue: rows.filter((o) => String(o.status) !== 'cancelled').reduce((sum, o) => sum + (Number(o.total) || 0), 0),
+          lowStock: products.filter((p) => p.is_active && p.stock <= 3).length,
+        });
+      })
+      .catch((err) => { console.error(err); toast.error('خطا در بارگذاری نمای کلی'); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const cards = [
+    { label: 'فروش ثبت‌شده', value: formatToman(data.revenue), icon: WalletCards },
+    { label: 'سفارش‌ها', value: faDigits(data.orders), icon: ShoppingBag },
+    { label: 'مشتریان', value: faDigits(data.customers), icon: Users },
+    { label: 'محصولات کم‌موجودی', value: faDigits(data.lowStock), icon: PackageSearch },
+  ];
+
+  if (loading) return <div className="glass rounded-3xl h-56 shimmer" />;
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map(({ label, value, icon: Icon }) => (
+          <div key={label} className="glass rounded-3xl p-5 relative overflow-hidden">
+            <div className="absolute -left-8 -top-8 w-24 h-24 rounded-full bg-primary/10 blur-2xl" />
+            <Icon className="w-5 h-5 text-primary mb-6" />
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-xl font-black mt-1">{value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid md:grid-cols-3 gap-4">
+        <div className="glass rounded-3xl p-5"><p className="text-xs text-muted-foreground">محصولات فعال</p><p className="text-2xl font-black mt-2">{faDigits(data.activeProducts)}</p></div>
+        <div className="glass rounded-3xl p-5"><p className="text-xs text-muted-foreground">سفارش‌های نیازمند پیگیری</p><p className="text-2xl font-black mt-2">{faDigits(data.pending)}</p></div>
+        <div className="glass rounded-3xl p-5"><p className="text-xs text-muted-foreground">وضعیت عملیات</p><p className="text-sm font-bold mt-3 text-emerald-400">داده‌ها از پایگاه‌داده فروشگاه خوانده می‌شوند</p></div>
+      </div>
     </div>
   );
 }
@@ -147,7 +202,7 @@ function ProductsPanel() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-muted-foreground">{p.category} / {p.gender === 'men' ? 'مردانه' : p.gender === 'women' ? 'زنانه' : 'هر دو'}</td>
+                  <td className="p-4 text-muted-foreground text-xs leading-6">{categoryPathLabel(p)}</td>
                   <td className="p-4">{formatToman(p.price)}</td>
                   <td className="p-4">{faDigits(p.stock)}</td>
                   <td className="p-4">
@@ -169,11 +224,16 @@ function ProductsPanel() {
 }
 
 function ProductForm({ product, onClose, onSaved }: { product: Product | null; onClose: () => void; onSaved: () => void }) {
+  const initialDepartment: Department = product?.department || 'footwear';
+  const initialGender: Gender = product?.gender === 'women' ? 'women' : 'men';
+  const initialSubcategory = product?.subcategory_slug || `${initialGender}-${initialDepartment === 'footwear' ? 'sneakers' : 'tshirt'}`;
   const [f, setF] = useState({
     slug: product?.slug || '',
     name: product?.name || '',
-    category: product?.category || 'کفش',
-    gender: product?.gender || 'men',
+    department: initialDepartment,
+    gender: initialGender,
+    subcategory_slug: initialSubcategory,
+    category: product?.category || (initialDepartment === 'footwear' ? 'کفش' : 'پوشاک'),
     brand: product?.brand || '',
     price: product?.price ?? 0,
     old_price: product?.old_price ?? null,
@@ -197,8 +257,10 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
       const payload = {
         slug: f.slug,
         name: f.name,
-        category: f.category,
+        category: f.department === 'footwear' ? 'کفش' : 'پوشاک',
+        department: f.department,
         gender: f.gender,
+        subcategory_slug: f.subcategory_slug,
         brand: f.brand || null,
         price: Number(f.price) || 0,
         old_price: f.old_price ? Number(f.old_price) : null,
@@ -229,17 +291,16 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
         <input value={f.slug} onChange={set('slug')} placeholder="اسلاگ (انگلیسی، یکتا) *" dir="ltr" className="w-full glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none" />
         <input value={f.name} onChange={set('name')} placeholder="نام محصول *" className="w-full glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none" />
         <div className="grid grid-cols-2 gap-3">
-          <select value={f.category} onChange={set('category')} className="glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none">
-            <option value="کفش" className="bg-card">کفش</option>
-            <option value="لباس" className="bg-card">لباس</option>
-            <option value="شلوار" className="bg-card">شلوار</option>
+          <select value={f.department} onChange={(e) => setF((s) => ({ ...s, department: e.target.value as Department, subcategory_slug: `${s.gender}-${e.target.value === 'footwear' ? 'sneakers' : 'tshirt'}` }))} className="glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none">
+            <option value="footwear" className="bg-card">کفش</option><option value="clothing" className="bg-card">پوشاک</option>
           </select>
-          <select value={f.gender} onChange={set('gender')} className="glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none">
-            <option value="men" className="bg-card">مردانه</option>
-            <option value="women" className="bg-card">زنانه</option>
-            <option value="unisex" className="bg-card">هر دو</option>
+          <select value={f.gender} onChange={(e) => setF((s) => ({ ...s, gender: e.target.value as Gender, subcategory_slug: `${e.target.value}-${s.department === 'footwear' ? 'sneakers' : 'tshirt'}` }))} className="glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none">
+            <option value="men" className="bg-card">مردانه</option><option value="women" className="bg-card">زنانه</option>
           </select>
         </div>
+        <select value={f.subcategory_slug} onChange={set('subcategory_slug')} className="glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none w-full">
+          {CATEGORY_TREE.find((d) => d.department === f.department)?.branches.find((b) => b.gender === f.gender)?.subcategories.map((s) => <option key={s.slug} value={s.slug} className="bg-card">{s.fa}</option>)}
+        </select>
         <input value={f.brand} onChange={set('brand')} placeholder="برند" className="w-full glass rounded-xl px-4 py-2.5 text-sm bg-transparent outline-none" />
         <div className="grid grid-cols-3 gap-3">
           <input value={f.price} onChange={set('price')} type="number" placeholder="قیمت *" className="glass rounded-xl px-3 py-2.5 text-sm bg-transparent outline-none" />
