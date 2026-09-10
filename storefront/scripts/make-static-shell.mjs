@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+const out='.vercel/output/static';
+const html=fs.readFileSync('/tmp/old-public.html','utf8');
+const entry=fs.readdirSync(`${out}/assets`).find((n)=>/^index-.*\.js$/.test(n));
+if(!entry) throw new Error('new client bundle missing');
+const bundlePath=`${out}/assets/${entry}`;
+let bundle=fs.readFileSync(bundlePath,'utf8');
+const before='(0,Vf.hydrateRoot)(document,(0,D.jsx)(D.StrictMode,{children:(0,Bf,{})}))';
+const after='(0,Vf.createRoot)(document).render((0,D.jsx)(D.StrictMode,{children:(0,Bf,{})}))';
+if(bundle.includes(before)) bundle=bundle.replace(before,after);
+else if(bundle.includes('Vf.hydrateRoot(document')) bundle=bundle.replace('Vf.hydrateRoot(document','Vf.createRoot(document).render');
+fs.writeFileSync(bundlePath,bundle);
+const shell=html.replaceAll('/assets/index-B50-EFHN.js', `/assets/${entry}`).replace(/<script[^>]*virtual:tanstack-start-dev-client-entry[^>]*><\/script>/g,'').replace(/<script async src="\/\.netlify\/scripts\/hud[^>]+><\/script>/g,'');
+fs.writeFileSync(`${out}/index.html`,shell);
+fs.writeFileSync(`${out}/_redirects`,'/* /index.html 200\n');
+console.log(`shell uses ${entry}; client-only=${bundle!==fs.readFileSync(bundlePath,'utf8')}`);

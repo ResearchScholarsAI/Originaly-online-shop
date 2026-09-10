@@ -1,0 +1,21 @@
+import { chromium } from "playwright";
+
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: "fa-IR" });
+const errors = [];
+page.on("console", (msg) => { if (msg.type() === "error") errors.push(`console: ${msg.text()}`); });
+page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
+await page.goto("http://127.0.0.1:8080/", { waitUntil: "networkidle" });
+await page.screenshot({ path: "screenshots/qa-desktop.png", fullPage: true });
+const desktop = { title: await page.title(), h1: await page.locator("h1").first().textContent(), images: await page.locator("img").count() };
+await page.locator('a[href="/shop"]').first().click();
+await page.waitForLoadState("networkidle");
+await page.screenshot({ path: "screenshots/qa-shop.png", fullPage: true });
+const shop = { url: page.url(), products: await page.locator("a[href*='/product/']").count() };
+const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "fa-IR" });
+mobile.on("console", (msg) => { if (msg.type() === "error") errors.push(`mobile console: ${msg.text()}`); });
+mobile.on("pageerror", (err) => errors.push(`mobile pageerror: ${err.message}`));
+await mobile.goto("http://127.0.0.1:8080/", { waitUntil: "networkidle" });
+await mobile.screenshot({ path: "screenshots/qa-mobile.png", fullPage: true });
+console.log(JSON.stringify({ desktop, shop, mobileTitle: await mobile.title(), errors }, null, 2));
+await browser.close();

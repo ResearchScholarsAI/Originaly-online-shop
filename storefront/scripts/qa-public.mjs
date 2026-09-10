@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: "fa-IR" });
+const errors = [];
+page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+page.on("pageerror", (e) => errors.push(e.message));
+await page.goto("https://originaly-next-storefront.netlify.app/", { waitUntil: "networkidle" });
+await page.screenshot({ path: "screenshots/public-desktop.png", fullPage: false });
+const result = { title: await page.title(), h1: await page.locator("h1").first().textContent(), images: await page.locator("img").count(), errors };
+console.log(JSON.stringify(result, null, 2));
+await browser.close();
