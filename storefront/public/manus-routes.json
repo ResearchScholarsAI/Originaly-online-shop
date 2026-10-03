@@ -8,7 +8,7 @@
     { "path": "/guide", "title": "راهنمای خرید" },
     { "path": "/login", "title": "ورود" },
     { "path": "/lookbook", "title": "ویراست" },
-    { "path": "/product/$slug", "title": "جزئیات محصول" },
+    { "path": "/product/:slug", "title": "جزئیات محصول" },
     { "path": "/shop", "title": "فروشگاه" },
     { "path": "/wishlist", "title": "علاقه‌مندی‌ها" }
   ]
