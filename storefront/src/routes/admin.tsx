@@ -6,6 +6,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import {
   adminCustomers,
   adminOrders,
+  claimAdmin,
   exportCustomersCsv,
   exportWoo,
   type AddressDTO,
@@ -28,6 +29,7 @@ function Admin() {
   const [q, setQ] = useState("");
   const [denied, setDenied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -65,8 +67,27 @@ function Admin() {
           این بخش فقط برای مدیر فروشگاه است. داده‌های مشتریان اطلاعات شخصی هستند.
         </p>
         <p className="mt-5 rounded-xl border border-warn/30 bg-subtle p-4 text-sm leading-7 text-warn">
-          حساب مدیر باید از طریق تنظیمات امن محیط اجرا تعیین شود؛ این صفحه هیچ دکمه‌ای برای ارتقای خودکار مشتری ندارد.
+          فقط ایمیلی که مالک در متغیر امن سرور HQ_ADMIN_EMAILS مجاز کرده باشد می‌تواند مدیر نخست را فعال کند؛ پس از ثبت مدیر اول، این امکان برای همیشه بسته می‌شود.
         </p>
+        <Button
+          className="mt-4"
+          variant="outline"
+          disabled={claiming}
+          onClick={async () => {
+            setClaiming(true);
+            try {
+              await claimAdmin();
+              toast.success("دسترسی مدیر فعال شد");
+              await load();
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "فعال‌سازی مدیر انجام نشد");
+            } finally {
+              setClaiming(false);
+            }
+          }}
+        >
+          {claiming ? "در حال بررسی…" : "فعال‌سازی مدیر اولیه"}
+        </Button>
       </div>
     );
   }

@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment secrets (keep the named example template trackable).
+.env
+.env.*
+!.env.example
+storefront/.env
+storefront/.env.*
+!storefront/.env.example
+
+# Local build and delivery artifacts.
+storefront/.vercel/
+storefront/artifacts/

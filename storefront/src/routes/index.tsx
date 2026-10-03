@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpLeft, ShieldCheck, Truck, Sparkles } from "lucide-react";
+import { ArrowUpLeft, Ruler, Tag, Sparkles, UserRoundCheck } from "lucide-react";
 import { safeListProducts } from "@/lib/store";
-import { EDITORIAL, PROMISES, TAXONOMY } from "@/lib/catalog";
+import { canPurchaseProduct, EDITORIAL, PROMISES, TAXONOMY } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import { TiltCard } from "@/components/tilt-card";
 import { BrandMark } from "@/components/brand-mark";
@@ -17,27 +17,28 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const products = Route.useLoaderData();
-  const featured = products.slice(0, 8);
+  const featured = products.filter(canPurchaseProduct).slice(0, 8);
+  const reviewProducts = products.filter((product) => product.catalogStatus === "under_review").slice(0, 4);
   return (
     <div>
       <section className="relative overflow-hidden">
         <img
           src="/brand/hero-cinematic.png"
-          alt="Originaly — Authentic fashion"
+          alt="Originaly — کفش و پوشاک"
           className="h-[72vh] min-h-[520px] w-full object-cover object-center sm:h-[78vh]"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/25 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-10 sm:pb-14">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-xl">
-              <p className="eyebrow">DROP 04 / AUTHENTIC STATE</p>
+              <p className="eyebrow">DROP 04 / VERIFIED DETAILS</p>
               <h1 className="mt-3 font-display text-4xl font-extrabold leading-[0.95] tracking-tight sm:text-6xl">
-                اورجینال.
+                انتخابِ روشن.
                 <br />
-                بدون حاشیه.
+                با جزئیاتِ روشن.
               </h1>
               <p className="mt-3 max-w-md text-sm leading-7 text-muted">
-                پوشاک و کفش اورجینال با دسته‌بندی دقیق مردانه و زنانه.
+                کالاهای تأییدشده برای خرید آماده‌اند؛ محصولات پیشین نیز می‌مانند تا با برچسب ناموجود، اطلاعاتشان تکمیل شود.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link to="/shop" search={{ dept: "footwear" }} className={cn(buttonVariants({ size: "lg" }))}>
@@ -54,17 +55,17 @@ function Home() {
                 <BrandMark className="size-12" />
                 <div>
                   <p className="text-xs tracking-[0.22em] text-primary">ORIGINALY.IR</p>
-                  <p className="text-sm font-bold">Authentic / Original / Limited</p>
+                  <p className="text-sm font-bold">CURATED / SINGLE SIZE / DROP 04</p>
                 </div>
               </div>
             </div>
           </div>
           <div className="mt-8 flex flex-wrap gap-5 text-xs text-muted">
             <span className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-primary" /> اصالت تضمین‌شده
+              <Ruler className="size-4 text-primary" /> یک سایز مشخص برای هر کالا
             </span>
             <span className="flex items-center gap-2">
-              <Truck className="size-4 text-primary" /> ارسال سریع
+              <Tag className="size-4 text-primary" /> قیمت نهاییِ ثبت‌شده
             </span>
             <span className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" /> دراپ‌های محدود
@@ -102,14 +103,14 @@ function Home() {
           <Link to="/lookbook" className="group relative min-h-[330px] overflow-hidden rounded-[28px] border border-border bg-elevated stage-lift">
             <img src="/brand/shoe-collage.png" alt="کالکشن شش‌تکه کفش‌های اورجینال" className="absolute inset-y-0 left-0 h-full w-[62%] object-contain object-left opacity-90 transition duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-l from-elevated via-elevated/75 to-transparent" />
-            <div className="relative flex min-h-[330px] flex-col justify-between p-7 sm:p-9">
-              <div className="self-end text-right"><p className="eyebrow">THE ORIGINALY SYSTEM</p><h2 className="mt-3 max-w-sm font-display text-3xl font-extrabold leading-tight sm:text-5xl">بیشتر از یک<br /><span className="text-primary">استایل.</span></h2><p className="mt-4 max-w-xs text-sm leading-7 text-muted">کالکشن‌های محدود، انتخاب دقیق و محصولی که قرار است مدت‌ها بماند.</p></div>
+              <div className="relative flex min-h-[330px] flex-col justify-between p-7 sm:p-9">
+              <div className="self-end text-right"><p className="eyebrow">THE ORIGINALY EDIT</p><h2 className="mt-3 max-w-sm font-display text-3xl font-extrabold leading-tight sm:text-5xl">جزئیات روشن<br /><span className="text-primary">خرید ساده.</span></h2><p className="mt-4 max-w-xs text-sm leading-7 text-muted">مدل‌های منتخب را با قیمت، سایز و موجودی ثبت‌شده در فروشگاه بررسی کنید.</p></div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-fg transition group-hover:gap-3">ورود به لوک‌بوک <ArrowUpLeft className="size-4" /></span>
             </div>
           </Link>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            <Link to="/guide" className="glass group rounded-[28px] p-6 transition hover:-translate-y-1"><p className="eyebrow">FIT / GUIDE</p><div className="mt-4 flex items-end justify-between gap-3"><div><h3 className="text-2xl font-extrabold">سایز درست، خرید مطمئن</h3><p className="mt-2 text-sm leading-6 text-muted">راهنمای انتخاب کفش و پوشاک برای هر محصول.</p></div><ArrowUpLeft className="size-5 text-primary transition group-hover:-translate-x-1 group-hover:-translate-y-1" /></div></Link>
-            <Link to="/login" className="glass group rounded-[28px] p-6 transition hover:-translate-y-1"><p className="eyebrow">VERIFIED CHECKOUT</p><div className="mt-4 flex items-end justify-between gap-3"><div><h3 className="text-2xl font-extrabold">خرید با موبایل تأییدشده</h3><p className="mt-2 text-sm leading-6 text-muted">OTP واقعی، آدرس ذخیره‌شده و مسیر شفاف سفارش.</p></div><ShieldCheck className="size-5 text-primary transition group-hover:scale-110" /></div></Link>
+            <Link to="/guide" className="glass group rounded-[28px] p-6 transition hover:-translate-y-1"><p className="eyebrow">FIT / GUIDE</p><div className="mt-4 flex items-end justify-between gap-3"><div><h3 className="text-2xl font-extrabold">سایز مشخص؛ خرید ساده</h3><p className="mt-2 text-sm leading-6 text-muted">سایز همان موجودی را ببینید؛ گزینه‌های چندسایزی نمایش داده نمی‌شوند.</p></div><ArrowUpLeft className="size-5 text-primary transition group-hover:-translate-x-1 group-hover:-translate-y-1" /></div></Link>
+            <Link to="/login" className="glass group rounded-[28px] p-6 transition hover:-translate-y-1"><p className="eyebrow">SECURE ACCOUNT</p><div className="mt-4 flex items-end justify-between gap-3"><div><h3 className="text-2xl font-extrabold">حساب مشتری</h3><p className="mt-2 text-sm leading-6 text-muted">OTP پس از اتصال سرویس پیامکیِ واقعی فعال می‌شود.</p></div><UserRoundCheck className="size-5 text-primary transition group-hover:scale-110" /></div></Link>
           </div>
         </div>
       </section>
@@ -149,7 +150,7 @@ function Home() {
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <p className="eyebrow">CURATED</p>
+            <p className="eyebrow">VERIFIED / AVAILABLE</p>
             <h2 className="mt-2 font-display text-2xl font-bold">الان روی رادار</h2>
           </div>
           <Link to="/shop" className="text-sm text-muted hover:text-fg">
@@ -162,6 +163,20 @@ function Home() {
           ))}
         </div>
       </section>
+
+      {reviewProducts.length ? (
+        <section className="mx-auto max-w-6xl px-4 py-8">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="eyebrow">ARCHIVE / UNDER REVIEW</p>
+              <h2 className="mt-2 font-display text-2xl font-bold">از کاتالوگ قبلی؛ فعلاً ناموجود</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">این کالاها حذف نشده‌اند؛ جزئیات قیمت و سایز تا زمان تأیید مالک پنهان است و هیچ‌کدام قابل خرید نیستند.</p>
+            </div>
+            <Link to="/shop" className="shrink-0 text-sm text-muted hover:text-fg">مشاهدهٔ همهٔ کالاها</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{reviewProducts.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+        </section>
+      ) : null}
 
       <section id="promise" className="border-y border-border bg-elevated/50 py-16">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 lg:grid-cols-[.8fr_1.2fr]">

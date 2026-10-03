@@ -1,5 +1,5 @@
 {
-  "name": "app-builder-workspace",
+  "name": "originaly-storefront",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -16,9 +16,12 @@
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts scripts/woo-export.test.ts",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "export:woo": "node --experimental-strip-types scripts/export-woo-package.mts",
+    "package:wordpress": "node --experimental-strip-types scripts/package-wordpress.mjs",
+    "test:platform-template": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts scripts/woo-export.test.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

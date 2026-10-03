@@ -11,10 +11,10 @@ import { BrandMark } from "@/components/brand-mark";
 import { motion, useReducedMotion } from "motion/react";
 
 const TICKER = [
-  "اصالت‌سنجی قبل از ارسال",
-  "ارسال رایگان بالای ۸ میلیون",
-  "۷ روز فرصت بازگشت",
-  "Originaly / authentic state",
+  "ORIGINALY / DROP 04",
+  "سایز ثابت و مشخص برای هر کالا",
+  "قیمت نهایی پیش از افزودن به سبد",
+  "کالکشن کفش و پوشاک",
 ];
 
 export function Header() {
@@ -47,7 +47,7 @@ export function Header() {
           <Link to="/" className="flex items-center gap-2">
             <BrandMark className="size-10" alt="" />
             <span className="font-display text-xl font-extrabold tracking-tight">ORIGINALY</span>
-            <span className="mb-0.5 hidden text-[9px] tracking-[0.22em] text-primary sm:block">AUTHENTIC STATE</span>
+            <span className="mb-0.5 hidden text-[9px] tracking-[0.22em] text-primary sm:block">CLEAR DETAILS</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setOpenDept(null)}>
             {TAXONOMY.map((d) => (

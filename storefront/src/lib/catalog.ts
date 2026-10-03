@@ -1,5 +1,7 @@
+import { DROP4_PRODUCTS } from "./catalog-drop4.ts";
+
 export type Department = "clothing" | "footwear";
-export type Gender = "men" | "women";
+export type Gender = "men" | "women" | "unisex";
 
 export type Subcategory = {
   id: string;
@@ -89,22 +91,33 @@ export const TAXONOMY: DepartmentNode[] = [
           { id: "sandal", nameFa: "صندل و دمپایی", nameEn: "Sandals", thumb: "/products/sandal.jpg" },
         ],
       },
+      {
+        id: "unisex",
+        nameFa: "یونیسکس",
+        nameEn: "Unisex",
+        subs: [
+          { id: "running", nameFa: "کتانی دویدن", nameEn: "Running", thumb: "/products/drop4/photo_5870998231397895919_y.jpg" },
+          { id: "sport", nameFa: "اسپرت", nameEn: "Sport", thumb: "/products/drop4/photo_5870998231397895921_y.jpg" },
+          { id: "hiking", nameFa: "کوهستانی", nameEn: "Hiking", thumb: "/products/drop4/photo_5870998231397895940_y.jpg" },
+          { id: "everyday", nameFa: "روزمره", nameEn: "Everyday", thumb: "/products/drop4/photo_5870998231397895941_y.jpg" },
+        ],
+      },
     ],
   },
 ];
 
 export const EDITORIAL = [
   {
-    eyebrow: "FOOTWEAR / DROP 04",
+    eyebrow: "FOOTWEAR / VERIFIED DETAILS",
     title: "کفشی که مسیر را عوض می‌کند",
-    copy: "اسپرت، کوهستانی و روزمره — فقط اورجینال، فقط انتخاب‌شده.",
+    copy: "مدل‌هایی با سایز ثابت و قیمت ثبت‌شده؛ مشخصات هر کالا را پیش از خرید ببینید.",
     image: "/products/lookbook-grid.jpg",
     dept: "footwear" as Department,
   },
   {
-    eyebrow: "CLOTHING / ARCHIVE",
-    title: "لایه‌هایی که می‌مانند",
-    copy: "تیشرت، شلوارک، کت خز و ست‌های ترند با برش شهری.",
+    eyebrow: "CLOTHING / REVIEW IN PROGRESS",
+    title: "پوشاک؛ پس از تأیید اطلاعات",
+    copy: "کالاهایی که سایز یا قیمتشان قطعی نشده، تا بازبینی نهایی برای خرید نمایش داده نمی‌شوند.",
     image: "/products/coat-fur-espresso.jpg",
     dept: "clothing" as Department,
   },
@@ -113,18 +126,18 @@ export const EDITORIAL = [
 export const PROMISES = [
   {
     number: "01",
-    title: "اصالت قبل از ارسال",
-    copy: "هر قطعه با برچسب اورجینال بررسی می‌شود. اگر اصل نباشد، اصلاً از انبار خارج نمی‌شود.",
+    title: "اطلاعات روشن هر کالا",
+    copy: "قیمت و سایز ثابتِ هر محصول پیش از افزودن به سبد دیده می‌شود؛ سایزهای تأییدنشده قابل سفارش نیستند.",
   },
   {
     number: "02",
-    title: "دسته‌بندی دقیق، نه شلوغ",
-    copy: "پوشاک و کفش، مردانه و زنانه، زیردسته‌های ترند. پیدا کردن سریع‌تر از اسکرول بی‌پایان.",
+    title: "کالکشن‌های مرتب",
+    copy: "کفش و پوشاک در دسته‌های مشخص و قابل جست‌وجو؛ نه فهرست‌های شلوغ و پراکنده.",
   },
   {
     number: "03",
-    title: "خرید با موبایل تأییدشده",
-    copy: "ثبت سفارش فقط بعد از تأیید پیامکی. برای ارسال، مالیات و پیگیری واقعی — نه فرم نمایشی.",
+    title: "پرداخت صادقانه",
+    copy: "تا زمان اتصال و آزمون سرویس پرداخت و پیامک، وضعیت آماده‌بودن خرید به‌صورت شفاف نمایش داده می‌شود.",
   },
 ];
 
@@ -143,9 +156,10 @@ export type SeedProduct = {
   image: string;
   sizes: string;
   stock: number;
+  catalogStatus?: "available" | "under_review";
 };
 
-export const SEED_PRODUCTS: SeedProduct[] = [
+export const LEGACY_PRODUCTS: SeedProduct[] = [
   {
     id: "p-m-tee-01",
     slug: "original-box-tee-men",
@@ -800,6 +814,37 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     stock: 5,
   },
 ];
+
+/** Legacy rows are retained for the storefront, but their historical sales data is not treated as current. */
+export const LEGACY_PRODUCT_IDS = new Set(LEGACY_PRODUCTS.map((product) => product.id));
+const LEGACY_REVIEW_NOTE = "از کاتالوگ قبلی فروشگاه نگه‌داری شده است. مدل، برند، قیمت و سایز در حال بازبینی‌اند؛ تا تأیید نهایی، کالا ناموجود است و سفارش نمی‌پذیرد.";
+export const SEED_PRODUCTS: SeedProduct[] = [
+  ...DROP4_PRODUCTS.map((product) => ({ ...product, catalogStatus: "available" as const })),
+  ...LEGACY_PRODUCTS.map((product) => ({
+    ...product,
+    nameEn: "",
+    brand: "در حال بررسی",
+    sizes: "در حال بررسی",
+    price: 0,
+    compareAt: undefined,
+    stock: 0,
+    descriptionFa: LEGACY_REVIEW_NOTE,
+    catalogStatus: "under_review" as const,
+  })),
+];
+
+export function isSingleSizeProduct(product: Pick<SeedProduct, "sizes">) {
+  const sizes = product.sizes.split(",").map((size) => size.trim()).filter(Boolean);
+  return (
+    sizes.length === 1 &&
+    Boolean(sizes[0]) &&
+    !/^(نامشخص|unknown|n\/a)$/i.test(sizes[0] ?? "")
+  );
+}
+
+export function canPurchaseProduct(product: Pick<SeedProduct, "catalogStatus" | "price" | "sizes" | "stock">) {
+  return product.catalogStatus === "available" && product.price > 0 && product.stock > 0 && isSingleSizeProduct(product);
+}
 
 export function findSub(dept?: string, gender?: string, sub?: string) {
   const d = TAXONOMY.find((x) => x.id === dept);

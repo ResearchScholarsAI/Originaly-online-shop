@@ -16,7 +16,7 @@ export type ShopSearch = {
 export const Route = createFileRoute("/shop")({
   validateSearch: (s: Record<string, unknown>): ShopSearch => ({
     dept: s.dept === "clothing" || s.dept === "footwear" ? s.dept : undefined,
-    gender: s.gender === "men" || s.gender === "women" ? s.gender : undefined,
+    gender: s.gender === "men" || s.gender === "women" || s.gender === "unisex" ? s.gender : undefined,
     sub: typeof s.sub === "string" ? s.sub : undefined,
     q: typeof s.q === "string" ? s.q : undefined,
   }),
@@ -99,7 +99,7 @@ function Shop() {
         <div className="stage-lift mx-auto mt-12 max-w-md rounded-2xl bg-elevated p-8 text-center">
           <p className="font-display text-xl font-bold">این قفسه هنوز خالی است</p>
           <p className="mt-2 text-sm leading-7 text-muted">
-            دراپ بعدی در همین دسته می‌آید. فعلاً بقیهٔ آرشیو را ببینید.
+            کالاهای تأییدشده پس از ثبت قیمت و سایز برای خرید فعال می‌شوند. محصولات پیشین در ویترین باقی می‌مانند و تا بازبینی با وضعیت ناموجود نمایش داده می‌شوند.
           </p>
           <Link to="/shop" className="mt-5 inline-block text-sm font-bold text-primary">
             بازگشت به همه محصولات

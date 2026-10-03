@@ -1,8 +1,9 @@
+import { createHash, randomInt, randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
-import { SEED_PRODUCTS, type SeedProduct } from "@/lib/catalog";
+import { canPurchaseProduct, SEED_PRODUCTS, type SeedProduct } from "@/lib/catalog";
 import { productsToCSV, productsToWooJSON } from "@/lib/woo";
 import { resolveSmsProvider } from "@/lib/sms";
 
@@ -58,21 +59,23 @@ function bool(v: unknown) {
 }
 
 function rowToProduct(r: Record<string, unknown>): SeedProduct {
+  const available = r.catalog_status === "available";
   return {
     id: String(r.id),
     slug: String(r.slug),
     nameFa: String(r.name_fa),
-    nameEn: String(r.name_en),
-    brand: String(r.brand),
-    descriptionFa: String(r.description_fa),
+    nameEn: available ? String(r.name_en) : "",
+    brand: available ? String(r.brand) : "در حال بررسی",
+    descriptionFa: available ? String(r.description_fa) : "این محصول از فهرست پیشین فروشگاه نگه داشته شده است. نام/مدل، برند، قیمت و سایز نیازمند بازبینی‌اند؛ فعلاً ناموجود است و سفارش نمی‌پذیرد.",
     department: r.department as SeedProduct["department"],
     gender: r.gender as SeedProduct["gender"],
     subcategory: String(r.subcategory),
-    price: Number(r.price),
-    compareAt: r.compare_at == null ? undefined : Number(r.compare_at),
+    price: available ? Number(r.price) : 0,
+    compareAt: !available || r.compare_at == null ? undefined : Number(r.compare_at),
     image: String(r.image),
-    sizes: String(r.sizes),
-    stock: Number(r.stock),
+    sizes: available ? String(r.sizes) : "در حال بررسی",
+    stock: available ? Number(r.stock) : 0,
+    catalogStatus: available ? "available" : "under_review",
   };
 }
 
@@ -120,25 +123,18 @@ export const ensureCatalog = createServerFn({ method: "GET" }).handler(async () 
   const sql = await getSql();
   for (const p of SEED_PRODUCTS) {
     await sql`
-      insert into products (id, slug, name_fa, name_en, brand, description_fa, department, gender, subcategory, price, compare_at, image, sizes, stock)
+      insert into products (id, slug, name_fa, name_en, brand, description_fa, department, gender, subcategory, price, compare_at, image, sizes, stock, catalog_status)
       values (
         ${p.id}, ${p.slug}, ${p.nameFa}, ${p.nameEn}, ${p.brand}, ${p.descriptionFa},
         ${p.department}, ${p.gender}, ${p.subcategory}, ${p.price}, ${p.compareAt ?? null},
-        ${p.image}, ${p.sizes}, ${p.stock}
+        ${p.image}, ${p.sizes}, ${p.stock}, ${p.catalogStatus ?? "under_review"}
       )
       on conflict (id) do update set
-        slug = excluded.slug,
-        name_fa = excluded.name_fa,
-        name_en = excluded.name_en,
-        brand = excluded.brand,
-        description_fa = excluded.description_fa,
-        department = excluded.department,
-        gender = excluded.gender,
-        subcategory = excluded.subcategory,
-        price = excluded.price,
-        compare_at = excluded.compare_at,
-        image = excluded.image,
-        sizes = excluded.sizes
+        name_fa = excluded.name_fa, name_en = excluded.name_en, brand = excluded.brand,
+        description_fa = excluded.description_fa, price = excluded.price,
+        compare_at = excluded.compare_at, sizes = excluded.sizes, stock = excluded.stock,
+        catalog_status = excluded.catalog_status
+      where products.catalog_status = 'under_review' and excluded.catalog_status = 'available'
     `;
   }
   return { ok: true, seeded: true };
@@ -182,7 +178,8 @@ export const getProduct = createServerFn({ method: "GET" })
     await ensureCatalog();
     const sql = await getSql();
     const rows = await sql<Record<string, unknown>>`select * from products where slug = ${data.slug} limit 1`;
-    return rows[0] ? rowToProduct(rows[0]) : null;
+    const product = rows[0] ? rowToProduct(rows[0]) : null;
+    return product;
   });
 
 async function ensureProfile(userId: string, email?: string | null, name?: string | null) {
@@ -217,12 +214,10 @@ export const saveProfileName = createServerFn({ method: "POST" })
   });
 
 function hashCode(code: string) {
-  const { createHash } = require("node:crypto") as typeof import("node:crypto");
   return createHash("sha256").update(code).digest("hex");
 }
 
 function genCode() {
-  const { randomInt } = require("node:crypto") as typeof import("node:crypto");
   return String(randomInt(100000, 999999));
 }
 
@@ -247,26 +242,40 @@ export const requestOtp = createServerFn({ method: "POST" })
     if (!/^09\d{9}$/.test(phone)) throw new Error("شماره موبایل باید با ۰۹ شروع شود و ۱۱ رقم باشد");
     const sql = await getSql();
     await ensureProfile(context.userId);
+    const recent = await sql<{ n: number }>`
+      select count(*)::int as n from phone_verifications
+      where user_id = ${context.userId} and created_at > now() - interval '60 seconds'
+    `;
+    if ((recent[0]?.n ?? 0) > 0) throw new Error("برای درخواست کد بعدی یک دقیقه صبر کنید");
+    const daily = await sql<{ n: number }>`
+      select count(*)::int as n from phone_verifications
+      where user_id = ${context.userId} and created_at > now() - interval '24 hours'
+    `;
+    if ((daily[0]?.n ?? 0) >= 6) throw new Error("سقف روزانهٔ ارسال کد برای این حساب تکمیل شده است");
     const code = genCode();
     const id = `otp_${Date.now()}`;
     await sql`
       insert into phone_verifications (id, user_id, phone, code_hash, expires_at)
       values (${id}, ${context.userId}, ${phone}, ${hashCode(code)}, now() + interval '5 minutes')
     `;
-    await sendOtpSms(phone, code);
-    const live = process.env.SMS_PROVIDER && process.env.SMS_PROVIDER !== "log";
+    const sent = await sendOtpSms(phone, code);
+    const live = sent.status === "sent" && sent.provider !== "log";
+    if (!live) await sql`update phone_verifications set consumed = true where id = ${id}`;
+    const development = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
     return {
-      ok: true,
-      demoCode: live ? undefined : code,
+      ok: live,
+      demoCode: live || !development ? undefined : code,
       message: live
-        ? "کد تأیید ارسال شد"
-        : "کد آزمایشی نمایش داده شد چون ارائه‌دهندهٔ پیامک هنوز فعال نیست",
+        ? "کد تأیید پیامک شد"
+        : development
+          ? "سرویس پیامک واقعی متصل نیست؛ این کد فقط برای آزمون محیط توسعه است"
+          : "سرویس پیامک هنوز پیکربندی نشده است؛ هیچ پیامکی ارسال نشد",
     };
   });
 
 export const verifyOtp = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator(z.object({ phone: z.string(), code: z.string().min(4).max(8) }))
+  .validator(z.object({ phone: z.string().regex(/^09\d{9}$/), code: z.string().regex(/^\d{6}$/) }))
   .handler(async ({ context, data }) => {
     const sql = await getSql();
     const rows = await sql<Record<string, unknown>>`
@@ -276,8 +285,15 @@ export const verifyOtp = createServerFn({ method: "POST" })
     `;
     const row = rows[0];
     if (!row) throw new Error("کدی یافت نشد. دوباره ارسال کنید");
+    if (Number(row.attempts ?? 0) >= 5) {
+      await sql`update phone_verifications set consumed = true where id = ${String(row.id)}`;
+      throw new Error("تعداد تلاش‌ها بیش از حد مجاز بود؛ کد تازه درخواست کنید");
+    }
     if (new Date(String(row.expires_at)).getTime() < Date.now()) throw new Error("کد منقضی شده است");
-    if (String(row.code_hash) !== hashCode(data.code.trim())) throw new Error("کد نادرست است");
+    if (String(row.code_hash) !== hashCode(data.code)) {
+      await sql`update phone_verifications set attempts = attempts + 1, consumed = (attempts >= 4) where id = ${String(row.id)}`;
+      throw new Error("کد نادرست است");
+    }
     await sql`update phone_verifications set consumed = true where id = ${String(row.id)}`;
     await sql`
       update profiles set phone = ${data.phone}, phone_verified_at = now(), updated_at = now()
@@ -318,13 +334,11 @@ export const saveAddress = createServerFn({ method: "POST" })
 const placeSchema = z.object({
   items: z.array(
     z.object({
-      productId: z.string(),
-      nameFa: z.string(),
-      size: z.string(),
-      qty: z.number().int().min(1),
-      price: z.number().int().min(1),
+      productId: z.string().min(1),
+      size: z.string().min(1).max(24),
+      qty: z.number().int().min(1).max(10),
     }),
-  ),
+  ).min(1).max(20),
   paymentMethod: z.enum(["offline", "zarinpal"]),
   addressId: z.string(),
 });
@@ -333,45 +347,68 @@ export const placeOrder = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(placeSchema)
   .handler(async ({ context, data }) => {
+    if (data.paymentMethod === "zarinpal") {
+      throw new Error("درگاه زرین‌پال هنوز به جریان درخواست و راستی‌آزمایی واقعی متصل نشده است");
+    }
+    const paymentInstructions = process.env.OFFLINE_PAYMENT_INSTRUCTIONS?.trim();
+    if (!paymentInstructions) throw new Error("روش پرداخت هنوز پیکربندی نشده است؛ ثبت سفارش فعلاً ممکن نیست");
+    if (new Set(data.items.map((item) => item.productId)).size !== data.items.length) {
+      throw new Error("هر کالا را فقط یک‌بار با سایز ثبت‌شده به سبد اضافه کنید");
+    }
     const sql = await getSql();
-    const profiles = await sql<Record<string, unknown>>`select * from profiles where user_id = ${context.userId} limit 1`;
-    const profile = profiles[0];
-    if (!profile?.phone_verified_at) throw new Error("برای ثبت سفارش باید شماره موبایل تأیید شود");
-    const addrs = await sql<Record<string, unknown>>`
-      select * from addresses where id = ${data.addressId} and user_id = ${context.userId} limit 1
-    `;
-    const addr = addrs[0];
-    if (!addr) throw new Error("آدرس نامعتبر است");
-    const total = data.items.reduce((n, i) => n + i.qty * i.price, 0);
-    const id = `ord_${Date.now()}`;
-    let paymentMethod = data.paymentMethod;
-    let paymentStatus = "unpaid";
-    let redirect: string | null = null;
-    const merchant = process.env.ZARINPAL_MERCHANT_ID;
-    if (paymentMethod === "zarinpal") {
-      if (!merchant) {
-        throw new Error("درگاه زرین‌پال هنوز فعال نشده است");
-      }
-      redirect = `https://www.zarinpal.com/pg/StartPay/demo`;
-    } else {
-      paymentStatus = "pending_offline";
-    }
-    await sql`
-      insert into orders (id, user_id, status, payment_method, payment_status, total, customer_name, customer_phone, city, postal_code, address)
-      values (
-        ${id}, ${context.userId}, ${"pending"}, ${paymentMethod}, ${paymentStatus}, ${total},
-        ${String(profile.name ?? "")}, ${String(profile.phone ?? "")},
-        ${String(addr.city)}, ${String(addr.postal_code)}, ${String(addr.address)}
-      )
-    `;
-    for (const it of data.items) {
-      const iid = `oi_${Math.random().toString(36).slice(2, 10)}`;
-      await sql`
-        insert into order_items (id, order_id, product_id, name_fa, size, qty, price)
-        values (${iid}, ${id}, ${it.productId}, ${it.nameFa}, ${it.size}, ${it.qty}, ${it.price})
+    return sql.transaction(async (tx) => {
+      const profiles = await tx<Record<string, unknown>>`select * from profiles where user_id = ${context.userId} limit 1`;
+      const profile = profiles[0];
+      if (!profile?.phone_verified_at) throw new Error("برای ثبت سفارش باید شمارهٔ موبایل تأیید شود");
+      const addrs = await tx<Record<string, unknown>>`
+        select * from addresses where id = ${data.addressId} and user_id = ${context.userId} limit 1
       `;
-    }
-    return { ok: true, orderId: id, redirect };
+      const addr = addrs[0];
+      if (!addr) throw new Error("آدرس نامعتبر است");
+
+      const verifiedItems: { product: SeedProduct; qty: number; size: string }[] = [];
+      let total = 0;
+      for (const item of data.items) {
+        const rows = await tx<Record<string, unknown>>`
+          select * from products where id = ${item.productId} limit 1 for update
+        `;
+        if (!rows[0]) throw new Error("یکی از کالاهای سبد دیگر در فهرست نیست");
+        const product = rowToProduct(rows[0]);
+        if (!canPurchaseProduct(product)) {
+          throw new Error(`«${product.nameFa}» هنوز برای خرید تأیید نشده یا موجود نیست`);
+        }
+        if (product.sizes.trim() !== item.size) {
+          throw new Error(`سایز ثبت‌شدهٔ «${product.nameFa}» تغییر کرده؛ سبد را به‌روزرسانی کنید`);
+        }
+        if (product.stock < item.qty) throw new Error(`موجودی «${product.nameFa}» برای این تعداد کافی نیست`);
+        verifiedItems.push({ product, qty: item.qty, size: product.sizes.trim() });
+        total += product.price * item.qty;
+      }
+
+      const id = `ord_${randomUUID()}`;
+      await tx`
+        insert into orders (id, user_id, status, payment_method, payment_status, total, customer_name, customer_phone, city, postal_code, address)
+        values (
+          ${id}, ${context.userId}, ${"pending"}, ${"offline"}, ${"pending_offline"}, ${total},
+          ${String(profile.name ?? "")}, ${String(profile.phone ?? "")},
+          ${String(addr.city)}, ${String(addr.postal_code)}, ${String(addr.address)}
+        )
+      `;
+      for (const item of verifiedItems) {
+        const changed = await tx<Record<string, unknown>>`
+          update products set stock = stock - ${item.qty}
+          where id = ${item.product.id} and stock >= ${item.qty}
+          returning id
+        `;
+        if (!changed.length) throw new Error(`موجودی «${item.product.nameFa}» هم‌زمان تغییر کرد؛ دوباره بررسی کنید`);
+        const itemId = `oi_${randomUUID()}`;
+        await tx`
+          insert into order_items (id, order_id, product_id, name_fa, size, qty, price)
+          values (${itemId}, ${id}, ${item.product.id}, ${item.product.nameFa}, ${item.size}, ${item.qty}, ${item.product.price})
+        `;
+      }
+      return { ok: true, orderId: id, total, paymentInstructions };
+    });
   });
 
 export const myOrders = createServerFn({ method: "GET" })
@@ -401,12 +438,38 @@ async function requireAdmin(userId: string) {
 export const claimAdmin = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const allowedEmails = new Set(
+      (process.env.HQ_ADMIN_EMAILS ?? "")
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    if (allowedEmails.size === 0) {
+      throw new Error("راه‌اندازی مدیر اولیه در محیط سرور پیکربندی نشده است");
+    }
     const sql = await getSql();
     await ensureProfile(context.userId);
-    const admins = await sql<{ n: number }>`select count(*)::int as n from profiles where is_admin = true`;
-    if ((admins[0]?.n ?? 0) > 0) throw new Error("مدیر از قبل تعیین شده است");
-    await sql`update profiles set is_admin = true where user_id = ${context.userId}`;
-    return { ok: true };
+    return sql.transaction(async (tx) => {
+      // Serialize simultaneous first-admin claims; only one approved account can win.
+      await tx`select pg_advisory_xact_lock(hashtextextended('originaly:initial-admin', 0))`;
+      const profiles = await tx<{ email: string | null }>`
+        select email from profiles where user_id = ${context.userId} limit 1
+      `;
+      const email = (profiles[0]?.email ?? "").trim().toLowerCase();
+      if (!email || !allowedEmails.has(email)) {
+        throw new Error("ایمیل این حساب در allowlist مدیران اولیه نیست");
+      }
+      const admins = await tx<{ n: number }>`
+        select count(*)::int as n from profiles where is_admin = true
+      `;
+      if ((admins[0]?.n ?? 0) > 0) throw new Error("مدیر از قبل تعیین شده است");
+      const updated = await tx<{ user_id: string }>`
+        update profiles set is_admin = true where user_id = ${context.userId} and is_admin = false
+        returning user_id
+      `;
+      if (updated.length === 0) throw new Error("حساب مدیر قابل ارتقا نیست");
+      return { ok: true };
+    });
   });
 
 export const adminCustomers = createServerFn({ method: "GET" })
@@ -480,13 +543,18 @@ export const exportWoo = createServerFn({ method: "GET" })
     await ensureCatalog();
     const sql = await getSql();
     const rows = await sql<Record<string, unknown>>`select * from products`;
-    const products = rows.map(rowToProduct);
+    const products = rows.map(rowToProduct).filter(canPurchaseProduct);
+    const publicBaseUrl = process.env.PUBLIC_SITE_URL?.trim() || undefined;
     return {
-      json: JSON.stringify(productsToWooJSON(products), null, 2),
-      csv: productsToCSV(products),
+      json: JSON.stringify(productsToWooJSON(products, publicBaseUrl), null, 2),
+      csv: productsToCSV(products, publicBaseUrl),
     };
   });
 
 export const zarinpalReady = createServerFn({ method: "GET" }).handler(async () => {
-  return { ready: Boolean(process.env.ZARINPAL_MERCHANT_ID) };
+  return {
+    ready: false,
+    offlineReady: Boolean(process.env.OFFLINE_PAYMENT_INSTRUCTIONS?.trim()),
+    offlineInstructions: process.env.OFFLINE_PAYMENT_INSTRUCTIONS?.trim() ?? null,
+  };
 });

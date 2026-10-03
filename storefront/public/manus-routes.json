@@ -1,0 +1,15 @@
+{
+  "routes": [
+    { "path": "/", "title": "Originaly — خانه" },
+    { "path": "/about", "title": "درباره Originaly" },
+    { "path": "/account", "title": "حساب کاربری" },
+    { "path": "/admin", "title": "مدیریت" },
+    { "path": "/cart", "title": "سبد خرید" },
+    { "path": "/guide", "title": "راهنمای خرید" },
+    { "path": "/login", "title": "ورود" },
+    { "path": "/lookbook", "title": "ویراست" },
+    { "path": "/product/$slug", "title": "جزئیات محصول" },
+    { "path": "/shop", "title": "فروشگاه" },
+    { "path": "/wishlist", "title": "علاقه‌مندی‌ها" }
+  ]
+}

@@ -2,11 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { AssistantDock } from "@/components/assistant-dock";
 import { Shell } from "@/components/layout/shell";
 import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Originaly | اورجینالی";
+const APP_NAME = "Originaly | فروشگاه آنلاین";
 
 const fetchSessionUser = createServerFn({ method: "GET" }).handler(async () => {
   const { getSessionUser } = await import("@/lib/auth/verify.server");
@@ -23,7 +24,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content: "فروشگاه اورجینال پوشاک و کفش. Authentic fashion.",
+        content: "فروشگاه آنلاین کفش و پوشاک Originaly؛ قیمت و سایز روشن برای کالاهای تأییدشده و کاتالوگ قدیمی در حال بازبینی.",
       },
       { name: "theme-color", content: "#08090d" },
     ],
@@ -56,6 +57,7 @@ function Root() {
         <AuthProvider>
           <Shell>
             <Outlet />
+            <AssistantDock />
           </Shell>
           <Toaster
             position="top-center"

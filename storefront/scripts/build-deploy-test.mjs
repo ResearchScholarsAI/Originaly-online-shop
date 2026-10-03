@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 const root = process.cwd();
 execFileSync("npm", ["run", "build"], { stdio: "inherit", cwd: root });
 execFileSync("npm", ["run", "preview:restart"], { stdio: "inherit", cwd: root });
